@@ -1,14 +1,23 @@
 """gomc-rest (Python, Pattern B).
 
-Bundles the gomc-rest server binary, auto-launches it as a subprocess, and
-hands back a PLCClient (from gomc-rest-client) pointed at it. The HTTP layer is
-provided entirely by gomc-rest-client; this package only adds binary bundling
-and process lifecycle.
+Bundles the gomc-rest server binary and offers two entry points over the same
+PLCClient (from gomc-rest-client):
+
+* ``launch()`` — auto-start the bundled server as a subprocess (optionally
+  exposed to the network) and talk to it.
+* ``connect()`` — act as a client to a gomc-rest server that is already
+  running elsewhere, without starting anything.
+
+The HTTP layer is provided entirely by gomc-rest-client; this package only adds
+binary bundling and process lifecycle.
 
     import gomc_rest
 
     with gomc_rest.launch(plc_host="192.168.0.1") as plc:
         plc.read("D100", 3)
+
+    plc = gomc_rest.connect("http://192.168.0.1:8080", token="...")
+    plc.read("D100", 3)
 """
 
 from __future__ import annotations
@@ -64,8 +73,27 @@ def launch(
     )
 
 
+def connect(
+    base_url: str = "http://127.0.0.1:8080",
+    token: str | None = None,
+) -> PLCClient:
+    """Return a PLCClient for a gomc-rest server that is already running.
+
+    Use this to talk to a server started elsewhere — another machine, a shared
+    instance, or one you launched with ``server_mode=True`` — without spawning
+    the bundled binary. Supports the context-manager protocol::
+
+        with gomc_rest.connect("http://192.168.0.1:8080", token="...") as plc:
+            plc.read("D100", 3)
+
+    For the bundled, auto-started server use ``launch()`` instead.
+    """
+    return PLCClient(base_url, token=token)
+
+
 __all__ = [
     "launch",
+    "connect",
     "Server",
     "PLCClient",
     "GomcRestBusyError",

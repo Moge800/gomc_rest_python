@@ -1,5 +1,7 @@
 # gomc-rest (Python)
 
+English / [日本語](https://github.com/Moge800/gomc_rest_python/blob/main/README_JP.md)
+
 Python package for talking to Mitsubishi PLCs via
 [gomc-rest](https://github.com/Moge800/gomc-rest) — **Pattern B**: the
 `gomc-rest` server binary is bundled and auto-launched as a subprocess, so you
@@ -43,6 +45,25 @@ Pass server flags through `extra_args`:
 with gomc_rest.launch(plc_host="192.168.0.1", extra_args=["-enable-remote"]) as plc:
     plc.remote_run()
 ```
+
+### Client mode (connect to an existing server)
+
+To talk to a gomc-rest server that is already running elsewhere — a shared
+instance, another machine, or one you launched with `server_mode=True` — use
+`connect()` instead of starting the bundled binary:
+
+```python
+with gomc_rest.connect("http://192.168.0.1:8080", token="...") as plc:
+    plc.read("D100", 3)
+```
+
+Both `launch()` and `connect()` hand you the same `PLCClient`, so one package
+covers "bundle and run the server" and "just be a client".
+
+`connect()` needs no bundled binary, so it works even on platforms without a
+prebuilt wheel (macOS, Windows arm64, glibc < 2.34): there `pip install
+gomc-rest` installs from the sdist, and only `launch()` is unavailable (it
+raises a clear error).
 
 ## Access control
 
