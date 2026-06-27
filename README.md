@@ -44,25 +44,33 @@ with gomc_rest.launch(plc_host="192.168.0.1", extra_args=["-enable-remote"]) as 
     plc.remote_run()
 ```
 
-## Network exposure
+## Access control
 
-By default the bundled server binds to **loopback only** (`127.0.0.1`): your own
-process can use it, but no other app or host can reach the REST API.
+Two independent layers protect the server, both on by default:
+
+1. **Per-launch bearer token.** A random token is generated each launch and
+   required by the server, so even another process on the same host that
+   discovers the port cannot call the API. It is set automatically on the
+   returned client and exposed as `server.token`. Pass an explicit `token=` to
+   share with another app, or `token=""` to disable auth (closed-network use).
+2. **Loopback binding.** By default the server binds to `127.0.0.1`, so no
+   other host can reach it.
 
 Set `server_mode=True` to bind all interfaces so other apps on the network
-(e.g. gomc-rest-gui, curl from another machine) can call it:
+(e.g. gomc-rest-gui, curl from another machine) can call it — give them
+`server.token`:
 
 ```python
 server = gomc_rest.launch(plc_host="192.168.0.1", server_mode=True)
 print(server.base_url)   # other apps connect to http://<this-host>:<port>
+print(server.token)      # ...with this bearer token
 try:
     server.client.read("D100", 3)
 finally:
     server.close()
 ```
 
-The server has no authentication or TLS — only enable `server_mode` on a
-trusted network.
+The server has no TLS — only enable `server_mode` on a trusted network.
 
 ## Versions
 
