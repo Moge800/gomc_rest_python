@@ -1,0 +1,41 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install package and test deps
+        run: python -m pip install -e . pytest
+
+      - name: Vendor the Linux server binary
+        run: python scripts/vendor_binaries.py --only gomc-rest-linux-amd64
+
+      - name: Run tests
+        run: python -m pytest -v
+
+  # Verify the dynamically-linked amd64 binary actually starts on its declared
+  # glibc floor (manylinux_2_34 == glibc 2.34), not just on the latest runner.
+  floor-glibc-amd64:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Smoke test on glibc 2.34
+        run: |
+          docker run --rm -v "$PWD":/w -w /w \
+            quay.io/pypa/manylinux_2_34_x86_64 bash -c '
+              PY=/opt/python/cp311-cp311/bin/python
+              "$PY" -m pip install -e . pytest &&
+              "$PY" scripts/vendor_binaries.py --only gomc-rest-linux-amd64 &&
+              "$PY" -m pytest -v
+            '
