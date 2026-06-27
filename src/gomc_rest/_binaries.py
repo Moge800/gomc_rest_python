@@ -52,9 +52,19 @@ def binary_path() -> Path:
             "(see gomc_rest/binaries/README.md)."
         )
 
-    # sdists/VCS checkouts may drop the executable bit.
-    if system != "windows":
-        mode = path.stat().st_mode
-        path.chmod(mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+    # Wheels preserve the executable bit set at build time; only repair it when
+    # it is actually missing (e.g. an sdist/VCS checkout). Chmod'ing
+    # unconditionally breaks the common root-installs / non-root-runs setup,
+    # where the running user does not own an already-executable binary.
+    if system != "windows" and not path.stat().st_mode & stat.S_IXUSR:
+        try:
+            mode = path.stat().st_mode
+            path.chmod(mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+        except PermissionError as exc:
+            raise RuntimeError(
+                f"Bundled binary {path} is not executable and its permissions "
+                "cannot be changed by this user. Reinstall the wheel or add the "
+                "executable bit."
+            ) from exc
 
     return path

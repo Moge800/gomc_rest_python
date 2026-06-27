@@ -72,11 +72,21 @@ finally:
 
 The server has no TLS — only enable `server_mode` on a trusted network.
 
+**Threat model.** The token is passed to the server via the `GOMCR_TOKEN`
+environment variable (not the command line), so it does not appear in the
+process list. It protects against other hosts and other OS users. It does
+**not** protect against another process running as the **same OS user**, which
+can read the server's environment (e.g. `/proc/<pid>/environ`); the OS user
+boundary is the trust boundary here.
+
 ## Versions
 
-This package bundles a pinned `gomc-rest` binary. The bundled server must
-satisfy `gomc-rest-client`'s `MINIMUM_SUPPORTED_GOMC_REST_VERSION`
-(currently **v1.3.0**); `launch()` verifies this on startup.
+This package bundles a pinned `gomc-rest` binary (currently **v1.4.0**, set in
+`GOMC_REST_VERSION`) that must satisfy `gomc-rest-client`'s
+`MINIMUM_SUPPORTED_GOMC_REST_VERSION`; `launch()` verifies this on startup. The
+`gomc-rest-client` dependency is capped (`>=0.10.0,<0.11`) so a future client
+that raises its minimum server version can't be installed without also bumping
+the bundled binary.
 
 ## Releasing / bundled binaries
 
@@ -87,7 +97,15 @@ committed to git; they are fetched from the matching gomc-rest GitHub release.
   into `src/gomc_rest/binaries/`.
 - On a `v*` tag, `.github/workflows/release.yml` builds one platform-specific
   wheel per OS (each bundling only its matching binary) and publishes to PyPI
-  via trusted publishing.
+  via trusted publishing. The release job verifies the tag equals
+  `project.version`; `workflow_dispatch` builds wheels for verification only and
+  never publishes.
 
-To bump the bundled server, edit `GOMC_REST_VERSION` (keep it >= the client's
-`MINIMUM_SUPPORTED_GOMC_REST_VERSION`) and cut a new tag.
+To cut a release:
+
+1. To change the bundled server, edit `GOMC_REST_VERSION` (keep it within the
+   range accepted by the pinned `gomc-rest-client`).
+2. Bump the package version in **both** `pyproject.toml` (`project.version`)
+   and `src/gomc_rest/__init__.py` (`__version__`) — they must match.
+3. Tag that exact version, e.g. `git tag v0.2.0 && git push origin v0.2.0`
+   (the tag must equal `project.version` or the release job fails).

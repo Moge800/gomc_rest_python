@@ -62,6 +62,9 @@ jobs:
   publish:
     name: publish to PyPI
     needs: build-wheels
+    # Only publish for real version tags; workflow_dispatch builds wheels for
+    # verification but must never publish from an arbitrary branch.
+    if: github.ref_type == 'tag'
     runs-on: ubuntu-latest
     environment: pypi
     permissions:

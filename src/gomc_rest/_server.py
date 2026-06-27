@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import atexit
+import os
 import secrets
 import socket
 import subprocess
@@ -59,18 +60,20 @@ class Server:
         # server. server_mode binds all interfaces so other apps on the
         # network can call the REST API (give them self.token).
         listen = f":{self._port}" if server_mode else f"127.0.0.1:{self._port}"
-        # Always pass -token explicitly (empty when disabled) so an inherited
-        # GOMCR_TOKEN cannot enable auth on the server while the client stays
-        # unauthenticated.
         args = [
             str(binary_path()),
             "-listen", listen,
             "-host", plc_host,
             "-port", str(plc_port),
-            "-token", self.token or "",
             *(extra_args or []),
         ]
-        self._proc = subprocess.Popen(args)
+        # Pass the token via the environment, not argv, so it is not exposed in
+        # the process list / /proc/<pid>/cmdline. Set GOMCR_TOKEN explicitly
+        # (empty when disabled) so an inherited value can't enable auth on the
+        # server while the client stays unauthenticated.
+        env = os.environ.copy()
+        env["GOMCR_TOKEN"] = self.token or ""
+        self._proc = subprocess.Popen(args, env=env)
         atexit.register(self.close)
         self.client = PLCClient(self.base_url, token=self.token)
         try:
