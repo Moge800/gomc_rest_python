@@ -1,6 +1,6 @@
 # gomc-rest (Python)
 
-English / [日本語](README_JP.md)
+English / [日本語](https://github.com/Moge800/gomc_rest_python/blob/main/README_JP.md)
 
 Python package for talking to Mitsubishi PLCs via
 [gomc-rest](https://github.com/Moge800/gomc-rest) — **Pattern B**: the
@@ -59,6 +59,11 @@ with gomc_rest.connect("http://192.168.0.1:8080", token="...") as plc:
 
 Both `launch()` and `connect()` hand you the same `PLCClient`, so one package
 covers "bundle and run the server" and "just be a client".
+
+`connect()` needs no bundled binary, so it works even on platforms without a
+prebuilt wheel (macOS, Windows arm64, glibc < 2.34): there `pip install
+gomc-rest` installs from the sdist, and only `launch()` is unavailable (it
+raises a clear error).
 
 ## Access control
 

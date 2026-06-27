@@ -1,7 +1,10 @@
 name: release
 
 # Build one platform-specific wheel per OS (each bundling only its matching
-# gomc-rest binary) and publish to PyPI on a version tag.
+# gomc-rest binary) plus a binary-free sdist, and publish to PyPI on a version
+# tag. The sdist is the client-only fallback: on platforms without a matching
+# wheel (macOS, Windows arm64, glibc < 2.34), pip builds it so connect() still
+# works (launch() then raises a clear "binary not found/unsupported" error).
 on:
   push:
     tags:
@@ -64,9 +67,37 @@ jobs:
           name: wheel-${{ matrix.plat }}
           path: dist/*.whl
 
+  build-sdist:
+    name: sdist (client-only fallback)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Check tag matches project version
+        if: github.ref_type == 'tag'
+        shell: bash
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          proj=$(python -c "import tomllib,pathlib; print(tomllib.loads(pathlib.Path('pyproject.toml').read_bytes().decode())['project']['version'])")
+          test "$tag" = "$proj" || { echo "::error::tag $GITHUB_REF_NAME does not match project.version $proj"; exit 1; }
+
+      - name: Build sdist (no binary bundled)
+        run: |
+          python -m pip install --upgrade build
+          python -m build --sdist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sdist
+          path: dist/*.tar.gz
+
   publish:
     name: publish to PyPI
-    needs: build-wheels
+    needs: [build-wheels, build-sdist]
     # Only publish for real version tags; workflow_dispatch builds wheels for
     # verification but must never publish from an arbitrary branch.
     if: github.ref_type == 'tag'

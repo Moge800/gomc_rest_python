@@ -60,6 +60,11 @@ with gomc_rest.connect("http://192.168.0.1:8080", token="...") as plc:
 `launch()` も `connect()` も同じ `PLCClient` を返すため、「サーバを同梱して
 起動する」用途と「クライアントとして繋ぐだけ」の用途が 1 パッケージで揃います。
 
+`connect()` は同梱バイナリを必要としないため、ビルド済み wheel が無い
+プラットフォーム（macOS、Windows arm64、glibc 2.34 未満）でも動作します。
+そうした環境では `pip install gomc-rest` が sdist からインストールされ、
+`launch()` だけが使えません（呼ぶと明確なエラーになります）。
+
 ## アクセス制御
 
 既定で 2 つの独立した層がサーバを保護します（両方とも有効）:
