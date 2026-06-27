@@ -46,6 +46,20 @@ with gomc_rest.launch(plc_host="192.168.0.1", extra_args=["-enable-remote"]) as 
     plc.remote_run()
 ```
 
+### クライアントモード（既存サーバへ接続）
+
+既に別の場所で動いている gomc-rest サーバ（共有インスタンス、別マシン、
+`server_mode=True` で起動したサーバなど）に繋ぐ場合は、同梱バイナリを起動せず
+`connect()` を使います:
+
+```python
+with gomc_rest.connect("http://192.168.0.1:8080", token="...") as plc:
+    plc.read("D100", 3)
+```
+
+`launch()` も `connect()` も同じ `PLCClient` を返すため、「サーバを同梱して
+起動する」用途と「クライアントとして繋ぐだけ」の用途が 1 パッケージで揃います。
+
 ## アクセス制御
 
 既定で 2 つの独立した層がサーバを保護します（両方とも有効）:

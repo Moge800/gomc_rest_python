@@ -46,6 +46,20 @@ with gomc_rest.launch(plc_host="192.168.0.1", extra_args=["-enable-remote"]) as 
     plc.remote_run()
 ```
 
+### Client mode (connect to an existing server)
+
+To talk to a gomc-rest server that is already running elsewhere — a shared
+instance, another machine, or one you launched with `server_mode=True` — use
+`connect()` instead of starting the bundled binary:
+
+```python
+with gomc_rest.connect("http://192.168.0.1:8080", token="...") as plc:
+    plc.read("D100", 3)
+```
+
+Both `launch()` and `connect()` hand you the same `PLCClient`, so one package
+covers "bundle and run the server" and "just be a client".
+
 ## Access control
 
 Two independent layers protect the server, both on by default:
