@@ -15,7 +15,7 @@ keywords = ["mitsubishi", "plc", "mc-protocol", "slmp", "gomc-rest"]
 # HTTP layer is delegated to gomc-rest-client (pattern A). We only add the
 # bundled-binary + subprocess lifecycle on top.
 dependencies = [
-    "gomc-rest-client>=0.1.0",
+    "gomc-rest-client>=0.9.0",
 ]
 
 [project.urls]
