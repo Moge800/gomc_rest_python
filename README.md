@@ -1,5 +1,7 @@
 # gomc-rest (Python)
 
+English / [日本語](README_JP.md)
+
 Python package for talking to Mitsubishi PLCs via
 [gomc-rest](https://github.com/Moge800/gomc-rest) — **Pattern B**: the
 `gomc-rest` server binary is bundled and auto-launched as a subprocess, so you
