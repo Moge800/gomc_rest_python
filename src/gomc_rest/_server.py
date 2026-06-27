@@ -35,15 +35,20 @@ class Server:
         self,
         plc_host: str = "192.168.0.1",
         plc_port: int = 5007,
+        server_mode: bool = False,
         extra_args: list[str] | None = None,
         startup_timeout: float = 10.0,
     ) -> None:
         self._port = _free_port()
         self.base_url = f"http://127.0.0.1:{self._port}"
 
+        # Default: bind to loopback only, so no other app/host can reach the
+        # (unauthenticated) server. server_mode binds all interfaces so other
+        # apps on the network can call the REST API.
+        listen = f":{self._port}" if server_mode else f"127.0.0.1:{self._port}"
         args = [
             str(binary_path()),
-            "-listen", f":{self._port}",
+            "-listen", listen,
             "-host", plc_host,
             "-port", str(plc_port),
             *(extra_args or []),

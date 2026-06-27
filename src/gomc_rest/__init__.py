@@ -27,6 +27,7 @@ __version__ = "0.1.0"
 def launch(
     plc_host: str = "192.168.0.1",
     plc_port: int = 5007,
+    server_mode: bool = False,
     extra_args: list[str] | None = None,
     startup_timeout: float = 10.0,
 ) -> Server:
@@ -37,12 +38,18 @@ def launch(
         with gomc_rest.launch(plc_host="192.168.0.1") as plc:
             plc.read("D100", 3)
 
+    By default the server binds to loopback only, so no other app or host can
+    reach it. Set ``server_mode=True`` to bind all interfaces and let other
+    apps on the network call the REST API (the server has no auth/TLS — only
+    expose it on a trusted network).
+
     ``extra_args`` are passed through to the gomc-rest binary (e.g.
     ``["-enable-remote"]`` or ``["-readonly"]``).
     """
     return Server(
         plc_host=plc_host,
         plc_port=plc_port,
+        server_mode=server_mode,
         extra_args=extra_args,
         startup_timeout=startup_timeout,
     )

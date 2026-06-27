@@ -44,6 +44,26 @@ with gomc_rest.launch(plc_host="192.168.0.1", extra_args=["-enable-remote"]) as 
     plc.remote_run()
 ```
 
+## Network exposure
+
+By default the bundled server binds to **loopback only** (`127.0.0.1`): your own
+process can use it, but no other app or host can reach the REST API.
+
+Set `server_mode=True` to bind all interfaces so other apps on the network
+(e.g. gomc-rest-gui, curl from another machine) can call it:
+
+```python
+server = gomc_rest.launch(plc_host="192.168.0.1", server_mode=True)
+print(server.base_url)   # other apps connect to http://<this-host>:<port>
+try:
+    server.client.read("D100", 3)
+finally:
+    server.close()
+```
+
+The server has no authentication or TLS — only enable `server_mode` on a
+trusted network.
+
 ## Versions
 
 This package bundles a pinned `gomc-rest` binary. The bundled server must
