@@ -94,7 +94,8 @@ The bundled server version is pinned in `GOMC_REST_VERSION`. Binaries are not
 committed to git; they are fetched from the matching gomc-rest GitHub release.
 
 - Locally: `python scripts/vendor_binaries.py` downloads all three binaries
-  into `src/gomc_rest/binaries/`.
+  into `src/gomc_rest/binaries/`, verifying each against the trusted SHA-256
+  values committed in `checksums/<version>.sha256`.
 - On a `v*` tag, `.github/workflows/release.yml` builds one platform-specific
   wheel per OS (each bundling only its matching binary) and publishes to PyPI
   via trusted publishing. The release job verifies the tag equals
@@ -104,7 +105,10 @@ committed to git; they are fetched from the matching gomc-rest GitHub release.
 To cut a release:
 
 1. To change the bundled server, edit `GOMC_REST_VERSION` (keep it within the
-   range accepted by the pinned `gomc-rest-client`).
+   range accepted by the pinned `gomc-rest-client`) and add a matching
+   `checksums/<version>.sha256` with the trusted SHA-256 of each asset. If the
+   new binaries change their glibc requirement, update the `plat` tags in
+   `release.yml` accordingly.
 2. Bump the package version in **both** `pyproject.toml` (`project.version`)
    and `src/gomc_rest/__init__.py` (`__version__`) — they must match.
 3. Tag that exact version, e.g. `git tag v0.2.0 && git push origin v0.2.0`

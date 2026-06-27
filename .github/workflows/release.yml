@@ -19,9 +19,14 @@ jobs:
           - os: windows-latest
             asset: gomc-rest.exe
             plat: win_amd64
+          # amd64 binary is dynamically linked and needs GLIBC_2.34, so it must
+          # be tagged manylinux_2_34 (not 2014/glibc 2.17) or pip would install
+          # it on older systems where it fails with "GLIBC_2.34 not found".
           - os: ubuntu-latest
             asset: gomc-rest-linux-amd64
-            plat: manylinux2014_x86_64
+            plat: manylinux_2_34_x86_64
+          # arm64 binary is statically linked (no glibc dependency), so the
+          # widest valid tag is fine.
           - os: ubuntu-24.04-arm
             asset: gomc-rest-linux-arm64
             plat: manylinux2014_aarch64

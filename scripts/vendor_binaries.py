@@ -13,6 +13,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import os
 import sys
 import urllib.request
@@ -27,6 +28,7 @@ ASSETS = [
 
 _ROOT = Path(__file__).resolve().parent.parent
 _DEST = _ROOT / "src" / "gomc_rest" / "binaries"
+_CHECKSUMS = _ROOT / "checksums"
 
 
 def _version() -> str:
@@ -36,11 +38,45 @@ def _version() -> str:
     return (_ROOT / "GOMC_REST_VERSION").read_text().strip()
 
 
-def _download(version: str, asset: str) -> None:
+def _expected_checksums(version: str) -> dict[str, str]:
+    """Load the trusted SHA-256 values pinned in this repo for `version`.
+
+    These are committed, not fetched from the same release, so swapping a
+    release asset after the fact is detected. Missing file -> fail closed.
+    """
+    path = _CHECKSUMS / f"{version}.sha256"
+    if not path.exists():
+        raise RuntimeError(
+            f"No pinned checksums for {version} at {path}. Add the trusted "
+            "SHA-256 values before vendoring."
+        )
+    sums: dict[str, str] = {}
+    for line in path.read_text().splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        digest, name = line.split()
+        sums[name] = digest
+    return sums
+
+
+def _download(version: str, asset: str, expected: dict[str, str]) -> None:
     url = f"https://github.com/{REPO}/releases/download/{version}/{asset}"
     out = _DEST / asset
     print(f"  {asset} <- {url}")
     urllib.request.urlretrieve(url, out)
+
+    want = expected.get(asset)
+    if want is None:
+        out.unlink(missing_ok=True)
+        raise RuntimeError(f"No pinned checksum for {asset} in {version}.sha256.")
+    got = hashlib.sha256(out.read_bytes()).hexdigest()
+    if got != want:
+        out.unlink(missing_ok=True)
+        raise RuntimeError(
+            f"Checksum mismatch for {asset}: expected {want}, got {got}."
+        )
+
     if not asset.endswith(".exe"):
         out.chmod(0o755)
 
@@ -55,12 +91,13 @@ def main() -> int:
     args = parser.parse_args()
 
     version = _version()
+    expected = _expected_checksums(version)
     targets = [args.only] if args.only else ASSETS
     _DEST.mkdir(parents=True, exist_ok=True)
     print(f"Vendoring gomc-rest {version} into {_DEST}")
     for asset in targets:
-        _download(version, asset)
-    print("Done.")
+        _download(version, asset, expected)
+    print("Done (checksums verified).")
     return 0
 
 
