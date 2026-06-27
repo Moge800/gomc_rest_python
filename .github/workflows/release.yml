@@ -32,6 +32,15 @@ jobs:
         with:
           python-version: "3.11"
 
+      - name: Check tag matches project version
+        if: github.ref_type == 'tag'
+        shell: bash
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          proj=$(python -c "import tomllib,pathlib; print(tomllib.loads(pathlib.Path('pyproject.toml').read_bytes().decode())['project']['version'])")
+          echo "tag=$tag project.version=$proj"
+          test "$tag" = "$proj" || { echo "::error::tag $GITHUB_REF_NAME does not match project.version $proj"; exit 1; }
+
       - name: Install build tooling
         run: python -m pip install --upgrade build wheel
 
