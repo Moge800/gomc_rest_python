@@ -78,7 +78,16 @@ This package bundles a pinned `gomc-rest` binary. The bundled server must
 satisfy `gomc-rest-client`'s `MINIMUM_SUPPORTED_GOMC_REST_VERSION`
 (currently **v1.3.0**); `launch()` verifies this on startup.
 
-## Status
+## Releasing / bundled binaries
 
-Early scaffold. The binaries are vendored at release time (see
-`src/gomc_rest/binaries/README.md`) and are not committed to git.
+The bundled server version is pinned in `GOMC_REST_VERSION`. Binaries are not
+committed to git; they are fetched from the matching gomc-rest GitHub release.
+
+- Locally: `python scripts/vendor_binaries.py` downloads all three binaries
+  into `src/gomc_rest/binaries/`.
+- On a `v*` tag, `.github/workflows/release.yml` builds one platform-specific
+  wheel per OS (each bundling only its matching binary) and publishes to PyPI
+  via trusted publishing.
+
+To bump the bundled server, edit `GOMC_REST_VERSION` (keep it >= the client's
+`MINIMUM_SUPPORTED_GOMC_REST_VERSION`) and cut a new tag.

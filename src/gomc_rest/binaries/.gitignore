@@ -1,0 +1,4 @@
+# Vendored at build time by scripts/vendor_binaries.py — never commit binaries.
+*
+!.gitignore
+!README.md
