@@ -2,20 +2,22 @@
 
 [English](README.md) / 日本語
 
-三菱 PLC を [gomc-rest](https://github.com/Moge800/gomc-rest) 経由で操作する
-Python パッケージです。**パターンB** を採用しており、`gomc-rest` サーバの
-バイナリを同梱して subprocess として自動起動します。そのため利用者が exe を
-自分で起動・配布する必要はありません。
+三菱PLCと通信するためのPythonパッケージです。
+[gomc-rest](https://github.com/Moge800/gomc-rest) のサーバーバイナリを同梱し、
+子プロセスとして自動起動する「サーバー同梱型（Pattern B）」を採用しています。
+利用者がサーバーの実行ファイルを別途用意したり、手動で起動したりする必要はありません。
 
-HTTP 通信層は [gomc-rest-client](https://github.com/Moge800/gomc_rest_client)
-が提供します。本パッケージはそこに「バイナリの同梱」と「プロセスのライフ
-サイクル管理」だけを足したものです。
+HTTPクライアント機能には
+[gomc-rest-client](https://github.com/Moge800/gomc_rest_client) を使用しています。
+このパッケージが追加するのは、サーバーバイナリの同梱とプロセスの
+ライフサイクル管理です。
 
 ```text
-あなたの Python プロセス
+Pythonプロセス
 └─ gomc_rest.launch()
-     ├─ 同梱 exe (gomc-rest) を空きループバックポートで起動 ── MCプロトコル ──▶ PLC
-     └─ そこを指す gomc_rest_client.PLCClient を返す
+     ├─ 同梱されたgomc-restをループバックアドレス上の空きポートで起動
+     │    └─ MCプロトコルでPLCと通信
+     └─ 起動したサーバーに接続するgomc_rest_client.PLCClientを提供
 ```
 
 ## インストール
@@ -32,107 +34,112 @@ import gomc_rest
 with gomc_rest.launch(plc_host="192.168.0.1") as plc:
     values = plc.read("D100", 3)
     plc.write("D100", [10, 20, 30])
-# with を抜けると同梱サーバは自動的に停止します
+# withブロックを抜けると、同梱サーバーは自動的に停止します
 ```
 
-`launch()` は `Server` を返します。context manager として使うと `PLCClient`
-（read/write/remote の全 API は gomc-rest-client を参照）が得られ、終了時に
-サーバを停止します。`with` を使わない場合は、インタプリタ終了時に停止します。
+`launch()` は、サーバープロセスを管理する `Server` オブジェクトを返します。
+コンテキストマネージャーとして使用すると、`with` ブロック内では
+`PLCClient` を利用でき、終了時にサーバーが停止します。`with` を使わない場合も、
+Pythonインタープリターの終了時にサーバーは停止します。
 
-サーバのフラグは `extra_args` で渡せます:
+サーバーの追加オプションは `extra_args` で指定できます。
 
 ```python
 with gomc_rest.launch(plc_host="192.168.0.1", extra_args=["-enable-remote"]) as plc:
     plc.remote_run()
 ```
 
-### クライアントモード（既存サーバへ接続）
+### クライアントモード（既存のサーバーに接続する）
 
-既に別の場所で動いている gomc-rest サーバ（共有インスタンス、別マシン、
-`server_mode=True` で起動したサーバなど）に繋ぐ場合は、同梱バイナリを起動せず
-`connect()` を使います:
+共有サーバーや別のコンピューターなど、すでに稼働しているgomc-restへ
+接続する場合は `connect()` を使用します。同梱バイナリは起動されません。
 
 ```python
 with gomc_rest.connect("http://192.168.0.1:8080", token="...") as plc:
     plc.read("D100", 3)
 ```
 
-`launch()` も `connect()` も同じ `PLCClient` を返すため、「サーバを同梱して
-起動する」用途と「クライアントとして繋ぐだけ」の用途が 1 パッケージで揃います。
+`connect()` は `PLCClient` を直接返します。`launch()` もコンテキスト
+マネージャー内では同じ `PLCClient` を提供するため、どちらの起動方式でも
+同じ読み書きAPIを利用できます。
 
-`connect()` は同梱バイナリを必要としないため、ビルド済み wheel が無い
-プラットフォーム（macOS、Windows arm64、glibc 2.34 未満）でも動作します。
-そうした環境では `pip install gomc-rest` が sdist からインストールされ、
-`launch()` だけが使えません（呼ぶと明確なエラーになります）。
+`connect()` は同梱バイナリを必要としないため、対応するビルド済み `wheel` が
+ない環境（macOS、Windows arm64、glibc 2.34未満など）でも利用できます。
+その場合、`pip install gomc-rest` は `sdist` からパッケージをインストールします。
+`connect()` は利用できますが、`launch()` を実行すると、対応するバイナリが
+ないことを示すエラーが発生します。
 
 ## アクセス制御
 
-既定で 2 つの独立した層がサーバを保護します（両方とも有効）:
+`launch()` で起動するサーバーは、デフォルトで次の二重の保護を使用します。
 
-1. **起動ごとの bearer トークン。** 起動のたびにランダムなトークンを生成し、
-   サーバ側で必須にします。そのため、ポートを発見した同一ホストの別プロセス
-   であってもトークン無しでは API を叩けません。トークンは返却される
-   クライアントへ自動設定され、`server.token` で参照できます。明示的に
-   `token=` を渡せば他アプリと共有でき、`token=""` で認証を無効化できます
-   （クローズドネットワーク用途）。
-2. **ループバックバインド。** 既定では `127.0.0.1` にバインドするため、他の
-   ホストからは到達できません。
+1. **起動ごとのBearerトークン**
 
-`server_mode=True` にすると全インターフェースにバインドし、ネットワーク上の
-他アプリ（gomc-rest-gui、別マシンの curl など）から呼べます。その際は
-`server.token` を相手に渡してください:
+   起動時にランダムなトークンを生成し、サーバーとクライアントの両方へ
+   自動設定します。明示的な `token=` を指定すれば、別のアプリケーションと
+   トークンを共有できます。`token=""` を指定すると認証を無効化できます。
+2. **ループバックアドレスへのバインド**
+
+   デフォルトでは `127.0.0.1` で待ち受けるため、別のコンピューターからは
+   接続できません。
+
+`server_mode=True` を指定すると、すべてのネットワークインターフェースで
+待ち受けます。gomc-rest-guiや別のコンピューター上のcurlなどから接続する場合は、
+`server.token` の値を接続元へ渡してください。
 
 ```python
 server = gomc_rest.launch(plc_host="192.168.0.1", server_mode=True)
-print(server.base_url)   # 他アプリは http://<このホスト>:<ポート> に接続
-print(server.token)      # ...このトークンを添えて
+print(server.base_url)  # ローカル接続用URL。外部からは127.0.0.1をホストのIPへ置換
+print(server.token)     # 接続元で使用するBearerトークン
 try:
     server.client.read("D100", 3)
 finally:
     server.close()
 ```
 
-サーバは TLS を持ちません。`server_mode` は信頼できるネットワークでのみ
-有効化してください。
+サーバーはTLSに対応していません。`server_mode=True` は、信頼できる
+ネットワーク内でのみ使用してください。
 
-**脅威モデル。** トークンはコマンドライン引数ではなく `GOMCR_TOKEN` 環境変数
-でサーバへ渡すため、プロセス一覧には現れません。これにより他ホスト・他 OS
-ユーザからは保護されます。ただし、**同一 OS ユーザ**で動く別プロセスは
-サーバの環境（例: `/proc/<pid>/environ`）を読めるため、そこに対しては保護
-**できません**。ここでの信頼境界は OS ユーザです。
+**脅威モデル:** トークンはコマンドライン引数ではなく、`GOMCR_TOKEN`
+環境変数を通じてサーバーへ渡されるため、通常のプロセス一覧には表示されません。
+これにより、別のホストや別のOSユーザーからのアクセスを防ぎます。一方、
+同じOSユーザーで動作するプロセスは、サーバーの環境変数
+（例: `/proc/<pid>/environ`）を読み取れる可能性があります。同一OSユーザーの
+プロセスは信頼されているものとして扱います。
 
 ## バージョン
 
-本パッケージは固定された `gomc-rest` バイナリ（現在 **v1.4.0**、`GOMC_REST_VERSION`
-で指定）を同梱します。これは `gomc-rest-client` の
-`MINIMUM_SUPPORTED_GOMC_REST_VERSION` を満たす必要があり、`launch()` が起動時に
-検証します。依存 `gomc-rest-client` は範囲を固定（`>=0.10.0,<0.11`）しており、
-将来クライアントが最低対応サーバ版を引き上げても、同梱バイナリを更新せずに
-インストールが壊れることはありません。
+同梱するgomc-restのバージョンは `GOMC_REST_VERSION` で固定しています
+（現在は **v1.4.0**）。`launch()` は起動時に、サーバーが
+`gomc-rest-client` の `MINIMUM_SUPPORTED_GOMC_REST_VERSION` を満たしているか
+確認します。
 
-## リリース / 同梱バイナリ
+`gomc-rest-client` の依存バージョンも `>=0.10.0,<0.11` に制限しています。
+これにより、より新しいサーバーを必要とするクライアントが意図せず
+インストールされることを防ぎます。
 
-同梱サーバのバージョンは `GOMC_REST_VERSION` で固定します。バイナリは git に
-コミットせず、対応する gomc-rest の GitHub リリースから取得します。
+## リリースと同梱バイナリ
 
-- ローカル: `python scripts/vendor_binaries.py` が 3 つのバイナリを
-  `src/gomc_rest/binaries/` にダウンロードし、`checksums/<version>.sha256` に
-  コミットされた信頼 SHA-256 値と照合します。
-- `v*` タグの push 時: `.github/workflows/release.yml` が OS ごとに
-  プラットフォーム別 wheel を 1 つずつビルド（各 wheel に対応バイナリのみ同梱）し、
-  trusted publishing で PyPI に公開します。リリースジョブはタグが
-  `project.version` と一致することを検証します。`workflow_dispatch` は wheel の
-  検証ビルドのみで、公開は行いません。
+バイナリはGitリポジトリへコミットせず、対応するgomc-restのGitHub Releaseから
+取得します。
 
-リリース手順:
+- ローカルでは `python scripts/vendor_binaries.py` を実行すると、3種類の
+  バイナリが `src/gomc_rest/binaries/` にダウンロードされます。各ファイルは
+  `checksums/<version>.sha256` に記録されたSHA-256ハッシュと照合されます。
+- `v*` タグをpushすると、`.github/workflows/release.yml` がOS別の `wheel` と
+  クライアント専用の `sdist` をビルドし、PyPIのTrusted Publishingを使用して
+  公開します。`workflow_dispatch` では検証用のビルドのみを行い、公開しません。
 
-1. 同梱サーバを変更する場合は `GOMC_REST_VERSION` を編集し（固定中の
-   `gomc-rest-client` が受け付ける範囲に収めること）、各アセットの信頼
-   SHA-256 を記した `checksums/<version>.sha256` を追加します。新しい
-   バイナリの glibc 要求が変わる場合は、`release.yml` の `plat` タグも更新します。
-2. パッケージのバージョンを `pyproject.toml`（`project.version`）と
-   `src/gomc_rest/__init__.py`（`__version__`）の**両方**で更新します
-   （両者は一致している必要があります）。
-3. そのバージョンと完全に一致するタグを切ります。例:
-   `git tag v0.2.0 && git push origin v0.2.0`
-   （タグが `project.version` と一致しないとリリースジョブは失敗します）。
+### リリース手順
+
+1. 同梱サーバーを変更する場合は `GOMC_REST_VERSION` を更新し、各バイナリの
+   SHA-256ハッシュを記載した `checksums/<version>.sha256` を追加します。
+   必要なglibcバージョンが変わる場合は、`release.yml` の `plat` タグも更新します。
+2. `pyproject.toml` の `project.version` と
+   `src/gomc_rest/__init__.py` の `__version__` を同じバージョンへ更新します。
+3. パッケージバージョンと同じタグを作成してpushします。
+
+```bash
+git tag v0.2.0
+git push origin v0.2.0
+```
