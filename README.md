@@ -2,20 +2,25 @@
 
 English / [日本語](https://github.com/Moge800/gomc_rest_python/blob/main/README_JP.md)
 
-Python package for talking to Mitsubishi PLCs via
-[gomc-rest](https://github.com/Moge800/gomc-rest) — **Pattern B**: the
-`gomc-rest` server binary is bundled and auto-launched as a subprocess, so you
-never have to start or distribute the executable yourself.
+**A Python library for talking to Mitsubishi PLCs.** Read and write PLC devices
+over the MC protocol (SLMP) — the protocol is handled for you by a bundled
+[gomc-rest](https://github.com/Moge800/gomc-rest) server that the package
+auto-launches, so you never have to start or distribute an executable yourself.
 
-The HTTP layer is provided by
+**Bonus — REST publishing.** The same bundled server can be exposed to other
+apps on your network (a GUI, another machine, another language), and `connect()`
+talks to a gomc-rest server that is already running elsewhere. See
+[Access control](#access-control).
+
+Under the hood the HTTP layer is provided by
 [gomc-rest-client](https://github.com/Moge800/gomc_rest_client); this package
-adds only the bundled binary and its process lifecycle.
+adds the bundled binary and its process lifecycle.
 
 ```text
 your Python process
 └─ gomc_rest.launch()
-     ├─ spawns gomc-rest (bundled exe) on a free loopback port  ── MC protocol ──▶ PLC
-     └─ returns a gomc_rest_client.PLCClient pointed at it
+     ├─ spawns the bundled gomc-rest on a free loopback port  ── MC protocol ──▶ PLC
+     └─ returns a PLCClient pointed at it
 ```
 
 ## Install

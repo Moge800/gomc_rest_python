@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "gomc-rest"
 version = "0.1.0"
-description = "Pattern-B wrapper for gomc-rest: bundles the gomc-rest server binary and auto-launches it, exposing a Python client for Mitsubishi PLCs."
+description = "Talk to Mitsubishi PLCs from Python over the MC protocol via a bundled, auto-launched gomc-rest server — with optional REST publishing."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
