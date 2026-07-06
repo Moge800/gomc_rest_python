@@ -35,19 +35,13 @@ jobs:
             plat: manylinux2014_aarch64
     steps:
       - uses: actions/checkout@v4
+        with:
+          # hatch-vcs derives the version from git tags
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-
-      - name: Check tag matches project version
-        if: github.ref_type == 'tag'
-        shell: bash
-        run: |
-          tag="${GITHUB_REF_NAME#v}"
-          proj=$(python -c "import tomllib,pathlib; print(tomllib.loads(pathlib.Path('pyproject.toml').read_bytes().decode())['project']['version'])")
-          echo "tag=$tag project.version=$proj"
-          test "$tag" = "$proj" || { echo "::error::tag $GITHUB_REF_NAME does not match project.version $proj"; exit 1; }
 
       - name: Install build tooling
         run: python -m pip install --upgrade build wheel
@@ -72,18 +66,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-
-      - name: Check tag matches project version
-        if: github.ref_type == 'tag'
-        shell: bash
-        run: |
-          tag="${GITHUB_REF_NAME#v}"
-          proj=$(python -c "import tomllib,pathlib; print(tomllib.loads(pathlib.Path('pyproject.toml').read_bytes().decode())['project']['version'])")
-          test "$tag" = "$proj" || { echo "::error::tag $GITHUB_REF_NAME does not match project.version $proj"; exit 1; }
 
       - name: Build sdist (no binary bundled)
         run: |

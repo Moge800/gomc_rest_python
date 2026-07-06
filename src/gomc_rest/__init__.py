@@ -29,9 +29,14 @@ from gomc_rest_client import (
     PLCClient,
 )
 
+from importlib.metadata import PackageNotFoundError, version as _pkg_version
+
 from ._server import Server
 
-__version__ = "0.1.2"
+try:
+    __version__ = _pkg_version("gomc-rest")
+except PackageNotFoundError:  # running from a source tree without install
+    __version__ = "0.0.0.dev0"
 
 
 def launch(
