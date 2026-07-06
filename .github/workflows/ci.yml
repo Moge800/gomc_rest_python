@@ -10,6 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # hatch-vcs derives the version from git tags
 
       - uses: actions/setup-python@v5
         with:
@@ -30,11 +32,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # hatch-vcs derives the version from git tags
       - name: Smoke test on glibc 2.34
         run: |
           docker run --rm -v "$PWD":/w -w /w \
             quay.io/pypa/manylinux_2_34_x86_64 bash -c '
               PY=/opt/python/cp311-cp311/bin/python
+              git config --global --add safe.directory /w &&
               "$PY" -m pip install -e . pytest &&
               "$PY" scripts/vendor_binaries.py --only gomc-rest-linux-amd64 &&
               "$PY" -m pytest -v

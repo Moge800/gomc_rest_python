@@ -6,8 +6,8 @@ Maintainer notes. Users don't need anything here — see [README.md](README.md).
 
 Pushing a `v*` tag runs `.github/workflows/release.yml`:
 
-1. **Guard** — the tag must equal `project.version` in `pyproject.toml`,
-   or every job fails immediately.
+1. **Version** — derived from the tag itself by hatch-vcs
+   (`dynamic = ["version"]`); there is no version string to keep in sync.
 2. **Build wheels** (one per platform, each bundling only its matching
    server binary, downloaded and SHA-256-verified at build time):
    - `win_amd64` — `gomc-rest.exe`
@@ -25,15 +25,17 @@ Pushing a `v*` tag runs `.github/workflows/release.yml`:
 
 ## Cutting a release
 
-1. Bump the package version in **both** places (they must match the tag):
-   - `pyproject.toml` → `project.version`
-   - `src/gomc_rest/__init__.py` → `__version__`
-2. Merge to `main`, then tag that exact version:
+Tag `main` and push — that's all. The version comes from the tag
+(hatch-vcs), and `__version__` reads the installed package metadata, so
+there is nothing to bump anywhere.
 
-   ```bash
-   git tag v0.2.0
-   git push origin v0.2.0
-   ```
+```bash
+git tag v0.2.0
+git push origin v0.2.0
+```
+
+Untagged builds get a dev version like `0.1.3.dev2+g1234abc` — handy for
+telling local builds apart from releases.
 
 If publish fails transiently, re-run the failed jobs for that tag's run
 from the GitHub Actions UI — PyPI skips files it already has, and the
