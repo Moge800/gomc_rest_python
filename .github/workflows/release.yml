@@ -112,3 +112,28 @@ jobs:
           merge-multiple: true
 
       - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          # Re-running a tag (e.g. after a workflow fix) must not fail on files
+          # PyPI already has.
+          skip-existing: true
+
+  github-release:
+    name: attach assets to GitHub Release
+    # Gate on publish so a release is only created once PyPI actually has the
+    # files; on a transient PyPI failure, re-running the tag is safe thanks to
+    # skip-existing.
+    needs: publish
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # create the release and upload assets
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true
