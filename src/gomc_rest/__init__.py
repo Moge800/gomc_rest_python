@@ -31,7 +31,7 @@ from gomc_rest_client import (
 
 from ._server import Server
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 
 
 def launch(
