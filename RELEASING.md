@@ -35,8 +35,10 @@ Pushing a `v*` tag runs `.github/workflows/release.yml`:
    git push origin v0.2.0
    ```
 
-If publish fails transiently, fix and re-push the same tag — PyPI skips
-files it already has, and the release job then attaches the assets.
+If publish fails transiently, re-run the failed jobs for that tag's run
+from the GitHub Actions UI — PyPI skips files it already has, and the
+release job then attaches the assets. Only delete and recreate the tag if
+the fix requires new commits (which means a new version anyway).
 
 ## Bumping the bundled gomc-rest server
 
