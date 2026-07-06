@@ -119,7 +119,10 @@ jobs:
 
   github-release:
     name: attach assets to GitHub Release
-    needs: [build-wheels, build-sdist]
+    # Gate on publish so a release is only created once PyPI actually has the
+    # files; on a transient PyPI failure, re-running the tag is safe thanks to
+    # skip-existing.
+    needs: publish
     if: github.ref_type == 'tag'
     runs-on: ubuntu-latest
     permissions:
