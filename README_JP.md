@@ -125,28 +125,8 @@ finally:
 これにより、より新しいサーバーを必要とするクライアントが意図せず
 インストールされることを防ぎます。
 
-## リリースと同梱バイナリ
+## 開発者向け
 
-バイナリはGitリポジトリへコミットせず、対応するgomc-restのGitHub Releaseから
-取得します。
-
-- ローカルでは `python scripts/vendor_binaries.py` を実行すると、3種類の
-  バイナリが `src/gomc_rest/binaries/` にダウンロードされます。各ファイルは
-  `checksums/<version>.sha256` に記録されたSHA-256ハッシュと照合されます。
-- `v*` タグをpushすると、`.github/workflows/release.yml` がOS別の `wheel` と
-  クライアント専用の `sdist` をビルドし、PyPIのTrusted Publishingを使用して
-  公開します。`workflow_dispatch` では検証用のビルドのみを行い、公開しません。
-
-### リリース手順
-
-1. 同梱サーバーを変更する場合は `GOMC_REST_VERSION` を更新し、各バイナリの
-   SHA-256ハッシュを記載した `checksums/<version>.sha256` を追加します。
-   必要なglibcバージョンが変わる場合は、`release.yml` の `plat` タグも更新します。
-2. `pyproject.toml` の `project.version` と
-   `src/gomc_rest/__init__.py` の `__version__` を同じバージョンへ更新します。
-3. パッケージバージョンと同じタグを作成してpushします。
-
-```bash
-git tag v0.2.0
-git push origin v0.2.0
-```
+リリース手順と同梱バイナリの管理方法は
+[RELEASING.md](https://github.com/Moge800/gomc_rest_python/blob/main/RELEASING.md)
+を参照してください。
