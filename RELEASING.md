@@ -61,7 +61,8 @@ Only needed when changing the bundled server version:
 python scripts/vendor_binaries.py            # fetch + verify all binaries
 python -m build --wheel
 python -m wheel tags --platform-tag manylinux_2_34_x86_64 --remove dist/*.whl
-python -m build --sdist                      # remove binaries first for a clean sdist
+rm src/gomc_rest/binaries/gomc-rest*         # drop vendored binaries for a clean sdist
+python -m build --sdist
 ```
 
 ## One-time infrastructure (already done)
