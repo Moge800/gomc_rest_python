@@ -117,7 +117,7 @@ finally:
 ## バージョン
 
 同梱するgomc-restのバージョンは `GOMC_REST_VERSION` で固定しています
-（現在は **v1.4.0**）。`launch()` は起動時に、サーバーが
+（現在は **v1.5.0**）。`launch()` は起動時に、サーバーが
 `gomc-rest-client` の `MINIMUM_SUPPORTED_GOMC_REST_VERSION` を満たしているか
 確認します。
 

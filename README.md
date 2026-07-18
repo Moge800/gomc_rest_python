@@ -107,7 +107,7 @@ boundary is the trust boundary here.
 
 ## Versions
 
-This package bundles a pinned `gomc-rest` binary (currently **v1.4.0**, set in
+This package bundles a pinned `gomc-rest` binary (currently **v1.5.0**, set in
 `GOMC_REST_VERSION`) that must satisfy `gomc-rest-client`'s
 `MINIMUM_SUPPORTED_GOMC_REST_VERSION`; `launch()` verifies this on startup. The
 `gomc-rest-client` dependency is capped (`>=0.10.0,<0.11`) so a future client
