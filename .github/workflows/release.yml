@@ -3,8 +3,9 @@ name: release
 # Build one platform-specific wheel per OS (each bundling only its matching
 # gomc-rest binary) plus a binary-free sdist, and publish to PyPI on a version
 # tag. The sdist is the client-only fallback: on platforms without a matching
-# wheel (macOS, Windows arm64, glibc < 2.34), pip builds it so connect() still
-# works (launch() then raises a clear "binary not found/unsupported" error).
+# wheel (Windows arm64, glibc < 2.34, macOS < 12), pip builds it so connect()
+# still works (launch() then raises a clear "binary not found/unsupported"
+# error).
 on:
   push:
     tags:
@@ -33,6 +34,14 @@ jobs:
           - os: ubuntu-24.04-arm
             asset: gomc-rest-linux-arm64
             plat: manylinux2014_aarch64
+          # Both darwin binaries declare a minimum OS of macOS 12 (Monterey)
+          # via LC_BUILD_VERSION, so the wheel must not claim an older floor.
+          - os: macos-13   # Intel runner
+            asset: gomc-rest-darwin-amd64
+            plat: macosx_12_0_x86_64
+          - os: macos-14   # Apple Silicon runner
+            asset: gomc-rest-darwin-arm64
+            plat: macosx_12_0_arm64
     steps:
       - uses: actions/checkout@v4
         with:

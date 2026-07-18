@@ -14,6 +14,8 @@ _BINARY_NAMES = {
     ("windows", "amd64"): "gomc-rest.exe",
     ("linux", "amd64"): "gomc-rest-linux-amd64",
     ("linux", "arm64"): "gomc-rest-linux-arm64",
+    ("darwin", "amd64"): "gomc-rest-darwin-amd64",
+    ("darwin", "arm64"): "gomc-rest-darwin-arm64",
 }
 
 _MACHINE_ALIASES = {

@@ -66,7 +66,7 @@ Both `launch()` and `connect()` hand you the same `PLCClient`, so one package
 covers "bundle and run the server" and "just be a client".
 
 `connect()` needs no bundled binary, so it works even on platforms without a
-prebuilt wheel (macOS, Windows arm64, glibc < 2.34): there `pip install
+prebuilt wheel (Windows arm64, glibc < 2.34, macOS < 12): there `pip install
 gomc-rest` installs from the sdist, and only `launch()` is unavailable (it
 raises a clear error).
 

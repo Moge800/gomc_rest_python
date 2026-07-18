@@ -44,3 +44,34 @@ jobs:
               "$PY" scripts/vendor_binaries.py --only gomc-rest-linux-amd64 &&
               "$PY" -m pytest -v
             '
+
+  # Real execution on both macOS architectures: catches Gatekeeper/code-signing
+  # issues (the amd64 binary is unsigned, arm64 is ad-hoc signed) that can't be
+  # checked by just inspecting the binary.
+  test-macos:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-13   # Intel
+            asset: gomc-rest-darwin-amd64
+          - os: macos-14   # Apple Silicon
+            asset: gomc-rest-darwin-arm64
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # hatch-vcs derives the version from git tags
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install package and test deps
+        run: python -m pip install -e . pytest
+
+      - name: Vendor the macOS server binary
+        run: python scripts/vendor_binaries.py --only ${{ matrix.asset }}
+
+      - name: Run tests
+        run: python -m pytest -v

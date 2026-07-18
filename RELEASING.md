@@ -14,8 +14,19 @@ Pushing a `v*` tag runs `.github/workflows/release.yml`:
    - `manylinux_2_34_x86_64` — `gomc-rest-linux-amd64` (dynamically linked,
      needs glibc ≥ 2.34; hence the 2_34 tag)
    - `manylinux2014_aarch64` — `gomc-rest-linux-arm64` (statically linked)
+   - `macosx_12_0_x86_64` (`macos-13` runner) — `gomc-rest-darwin-amd64`,
+     unsigned
+   - `macosx_12_0_arm64` (`macos-14` runner) — `gomc-rest-darwin-arm64`,
+     ad-hoc signed (Apple Silicon requires at least ad-hoc signing to run
+     at all)
+
+   Both darwin binaries declare a minimum OS of macOS 12 via
+   `LC_BUILD_VERSION`, hence the `macosx_12_0` tags. `ci.yml`'s
+   `test-macos` job actually launches the server on both real macOS
+   runners on every PR — the authoritative check for Gatekeeper/signing
+   behavior, since inspecting the binary can't fully predict it.
 3. **Build sdist** — no binary; the client-only fallback for platforms
-   without a wheel (macOS, Windows arm64, older glibc).
+   without a wheel (Windows arm64, older glibc, macOS < 12).
 4. **Publish to PyPI** — trusted publishing (OIDC) via the `pypi`
    environment. `skip-existing` makes re-running a tag safe.
 5. **GitHub Release** — created only after PyPI publish succeeds, with
@@ -51,11 +62,15 @@ Only needed when changing the bundled server version:
    bump the client pin in `pyproject.toml` together if needed.
 2. Add `checksums/<version>.sha256` with the trusted SHA-256 of each
    release asset (`gomc-rest.exe`, `gomc-rest-linux-amd64`,
-   `gomc-rest-linux-arm64`). These are committed so a swapped release
+   `gomc-rest-linux-arm64`, `gomc-rest-darwin-amd64`,
+   `gomc-rest-darwin-arm64`). These are committed so a swapped release
    asset is detected; vendoring fails closed without them.
-3. If the new binaries change their glibc requirement (check with
+3. If the Linux binaries change their glibc requirement (check with
    `readelf -V <binary> | grep GLIBC`), update the `plat` tags in
-   `release.yml` and the CI floor test image in `ci.yml`.
+   `release.yml` and the CI floor test image in `ci.yml`. If the darwin
+   binaries change their minimum OS (check with `otool -l <binary> | grep
+   -A3 LC_BUILD_VERSION`, or parse the load command directly), update the
+   `macosx_*` tags in `release.yml`.
 
 ## Local builds (testing without PyPI)
 
