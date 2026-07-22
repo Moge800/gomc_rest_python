@@ -1,11 +1,12 @@
 name: release
 
-# Build one platform-specific wheel per OS (each bundling only its matching
+# Build one platform-specific wheel per target (each bundling only its matching
 # gomc-rest binary) plus a binary-free sdist, and publish to PyPI on a version
-# tag. The sdist is the client-only fallback: on platforms without a matching
-# wheel (Windows arm64, glibc < 2.34, macOS < 12), pip builds it so connect()
-# still works (launch() then raises a clear "binary not found/unsupported"
-# error).
+# tag. All wheels cross-build on a single Linux runner (a wheel just zips the
+# pre-built binary). The sdist is the client-only fallback: on platforms
+# without a matching wheel (Windows arm64, glibc < 2.34, macOS < 12), pip
+# builds it so connect() still works (launch() then raises a clear "binary not
+# found/unsupported" error).
 on:
   push:
     tags:
@@ -15,32 +16,32 @@ on:
 jobs:
   build-wheels:
     name: wheel (${{ matrix.plat }})
-    runs-on: ${{ matrix.os }}
+    # A wheel just zips a pre-built binary and gets its platform tag forced by
+    # `wheel tags`, so the build host's OS/arch is irrelevant — everything
+    # cross-builds on one Linux runner (same idea as upstream gomc-rest, which
+    # cross-compiles all platforms from ubuntu). This avoids depending on
+    # scarce Windows/arm/macOS runners for releases.
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         include:
-          - os: windows-latest
-            asset: gomc-rest.exe
+          - asset: gomc-rest.exe
             plat: win_amd64
           # amd64 binary is dynamically linked and needs GLIBC_2.34, so it must
           # be tagged manylinux_2_34 (not 2014/glibc 2.17) or pip would install
           # it on older systems where it fails with "GLIBC_2.34 not found".
-          - os: ubuntu-latest
-            asset: gomc-rest-linux-amd64
+          - asset: gomc-rest-linux-amd64
             plat: manylinux_2_34_x86_64
           # arm64 binary is statically linked (no glibc dependency), so the
           # widest valid tag is fine.
-          - os: ubuntu-24.04-arm
-            asset: gomc-rest-linux-arm64
+          - asset: gomc-rest-linux-arm64
             plat: manylinux2014_aarch64
           # Both darwin binaries declare a minimum OS of macOS 12 (Monterey)
           # via LC_BUILD_VERSION, so the wheel must not claim an older floor.
-          - os: macos-13   # Intel runner
-            asset: gomc-rest-darwin-amd64
+          - asset: gomc-rest-darwin-amd64
             plat: macosx_12_0_x86_64
-          - os: macos-14   # Apple Silicon runner
-            asset: gomc-rest-darwin-arm64
+          - asset: gomc-rest-darwin-arm64
             plat: macosx_12_0_arm64
     steps:
       - uses: actions/checkout@v4

@@ -8,23 +8,24 @@ Pushing a `v*` tag runs `.github/workflows/release.yml`:
 
 1. **Version** — derived from the tag itself by hatch-vcs
    (`dynamic = ["version"]`); there is no version string to keep in sync.
-2. **Build wheels** (one per platform, each bundling only its matching
-   server binary, downloaded and SHA-256-verified at build time):
+2. **Build wheels** — all cross-build on a single `ubuntu-latest` runner
+   (a wheel just zips the matching binary, SHA-256-verified at build time,
+   then `wheel tags` forces the platform tag; the build host's OS/arch is
+   irrelevant, same as upstream gomc-rest cross-compiling from Linux):
    - `win_amd64` — `gomc-rest.exe`
    - `manylinux_2_34_x86_64` — `gomc-rest-linux-amd64` (dynamically linked,
      needs glibc ≥ 2.34; hence the 2_34 tag)
    - `manylinux2014_aarch64` — `gomc-rest-linux-arm64` (statically linked)
-   - `macosx_12_0_x86_64` (`macos-13` runner) — `gomc-rest-darwin-amd64`,
-     unsigned
-   - `macosx_12_0_arm64` (`macos-14` runner) — `gomc-rest-darwin-arm64`,
-     ad-hoc signed (Apple Silicon requires at least ad-hoc signing to run
-     at all)
+   - `macosx_12_0_x86_64` — `gomc-rest-darwin-amd64` (unsigned)
+   - `macosx_12_0_arm64` — `gomc-rest-darwin-arm64` (ad-hoc signed)
 
    Both darwin binaries declare a minimum OS of macOS 12 via
    `LC_BUILD_VERSION`, hence the `macosx_12_0` tags. `ci.yml`'s
-   `test-macos` job actually launches the server on both real macOS
-   runners on every PR — the authoritative check for Gatekeeper/signing
-   behavior, since inspecting the binary can't fully predict it.
+   `test-macos` job actually launches the server on a real `macos-14`
+   (Apple Silicon) runner every PR — the authoritative check for
+   Gatekeeper/signing on arm64. The Intel binary is verified offline only
+   (SHA-256 + Mach-O inspection); GitHub's Intel macOS runners are not
+   reliably schedulable, so we don't gate on them.
 3. **Build sdist** — no binary; the client-only fallback for platforms
    without a wheel (Windows arm64, older glibc, macOS < 12).
 4. **Publish to PyPI** — trusted publishing (OIDC) via the `pypi`
