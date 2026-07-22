@@ -24,6 +24,8 @@ ASSETS = [
     "gomc-rest.exe",
     "gomc-rest-linux-amd64",
     "gomc-rest-linux-arm64",
+    "gomc-rest-darwin-amd64",
+    "gomc-rest-darwin-arm64",
 ]
 
 _ROOT = Path(__file__).resolve().parent.parent

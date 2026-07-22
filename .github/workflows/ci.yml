@@ -44,3 +44,29 @@ jobs:
               "$PY" scripts/vendor_binaries.py --only gomc-rest-linux-amd64 &&
               "$PY" -m pytest -v
             '
+
+  # Real execution on Apple Silicon: confirms the ad-hoc-signed arm64 binary
+  # actually launches (Gatekeeper/signing behavior can't be judged by
+  # inspecting the binary offline). The Intel (amd64) binary is only verified
+  # offline (SHA-256 + Mach-O inspection) because GitHub's Intel macOS runners
+  # are not reliably schedulable here — they sat queued for 24h and were
+  # auto-cancelled.
+  test-macos:
+    runs-on: macos-14   # Apple Silicon
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # hatch-vcs derives the version from git tags
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install package and test deps
+        run: python -m pip install -e . pytest
+
+      - name: Vendor the macOS server binary
+        run: python scripts/vendor_binaries.py --only gomc-rest-darwin-arm64
+
+      - name: Run tests
+        run: python -m pytest -v

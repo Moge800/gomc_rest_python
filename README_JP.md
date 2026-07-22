@@ -71,7 +71,7 @@ with gomc_rest.connect("http://192.168.0.1:8080", token="...") as plc:
 同じ読み書きAPIを利用できます。
 
 `connect()` は同梱バイナリを必要としないため、対応するビルド済み `wheel` が
-ない環境（macOS、Windows arm64、glibc 2.34未満など）でも利用できます。
+ない環境（Windows arm64、glibc 2.34未満、macOS 12未満など）でも利用できます。
 その場合、`pip install gomc-rest` は `sdist` からパッケージをインストールします。
 `connect()` は利用できますが、`launch()` を実行すると、対応するバイナリが
 ないことを示すエラーが発生します。
@@ -117,7 +117,7 @@ finally:
 ## バージョン
 
 同梱するgomc-restのバージョンは `GOMC_REST_VERSION` で固定しています
-（現在は **v1.4.0**）。`launch()` は起動時に、サーバーが
+（現在は **v1.6.0**）。`launch()` は起動時に、サーバーが
 `gomc-rest-client` の `MINIMUM_SUPPORTED_GOMC_REST_VERSION` を満たしているか
 確認します。
 
