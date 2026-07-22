@@ -10,7 +10,7 @@ dynamic = ["version"]
 description = "Talk to Mitsubishi PLCs from Python over the MC protocol via a bundled, auto-launched gomc-rest server — with optional REST API exposure."
 readme = "README.md"
 requires-python = ">=3.10"
-license = { text = "MIT" }
+license = { text = "Apache-2.0" }
 authors = [{ name = "Moge800" }]
 keywords = ["mitsubishi", "plc", "mc-protocol", "slmp", "gomc-rest"]
 
