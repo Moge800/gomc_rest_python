@@ -110,9 +110,9 @@ boundary is the trust boundary here.
 This package bundles a pinned `gomc-rest` binary (currently **v1.7.0**, set in
 `GOMC_REST_VERSION`) that must satisfy `gomc-rest-client`'s
 `MINIMUM_SUPPORTED_GOMC_REST_VERSION`; `launch()` verifies this on startup. The
-`gomc-rest-client` dependency is capped (`>=0.10.0,<0.11`) so a future client
-that raises its minimum server version can't be installed without also bumping
-the bundled binary.
+`gomc-rest-client` dependency is capped (`>=1.0,<2`) so a breaking client
+release can't be pulled in silently. If a 1.x client ever requires a newer
+server than the bundled one, `launch()` fails at startup with a clear error.
 
 ## Development
 
