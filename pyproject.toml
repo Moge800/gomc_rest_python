@@ -17,10 +17,11 @@ keywords = ["mitsubishi", "plc", "mc-protocol", "slmp", "gomc-rest"]
 # HTTP layer is delegated to gomc-rest-client (pattern A). We only add the
 # bundled-binary + subprocess lifecycle on top.
 dependencies = [
-    # Cap the client to a range known to accept the bundled server version
-    # (GOMC_REST_VERSION). A future client that raises its minimum server
-    # version must not be pulled in without bumping the bundled binary too.
-    "gomc-rest-client>=0.10.0,<0.11",
+    # Cap at the next major: the client follows semver from 1.0, so breaking
+    # API changes land in 2.x. If a 1.x release raises its minimum server
+    # version above the bundled one, launch() still fails loudly at startup
+    # via is_supported_version(), which is the backstop for that case.
+    "gomc-rest-client>=1.0,<2",
 ]
 
 [project.urls]
